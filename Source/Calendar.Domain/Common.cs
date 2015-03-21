@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Calendar.Domain
 {
 	/// <summary>
-	/// Dni tygodnia w konwencji umożliwiającej kodowanie ich na pojedynczym bajcie poprzez złożenie bitów (np. pn i wt dadzą 0x06)
+	/// Days of week encoded in one byte as separated bits combination (eq. monday and tuesday give 0x06)
 	/// </summary>
 	[Flags]
 	public enum CalendarDayOfWeek : byte
@@ -21,6 +17,9 @@ namespace Calendar.Domain
 		Saturday = 0x40,
 	}
 
+	/// <summary>
+	/// Units for number of repetitions and for duration before event for alerts
+	/// </summary>
 	public enum TimeUnit
 	{
 		Minute = 1,
@@ -31,6 +30,9 @@ namespace Calendar.Domain
 		Year = 6
 	}
 
+	/// <summary>
+	/// Available alert action
+	/// </summary>
 	public enum AlertAction
 	{
 		SendEmail,
