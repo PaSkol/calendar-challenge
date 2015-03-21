@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace Calendar.Domain
 {
-	public class User : CalendarEntity
+	public class CalendarEntity
 	{
-		public string Name { get; set; }
-		public string Email { get; set; }
+		public int Id { get; set; }
 	}
 }
