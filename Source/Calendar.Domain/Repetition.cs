@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Calendar.Domain
 {
@@ -21,7 +22,7 @@ namespace Calendar.Domain
 		public int Period { get; set; }
 		public TimeUnit PeriodUnit { get; set; }
 		protected byte EncodedDaysOfWeek { get; set; }
-		public RepetitionExpiration Expiration { get; set; }
+		public RepetitionExpiration Expiration { get; private set; }
 
 		public IEnumerable<DayOfWeek> OnCertainDaysOfWeek
 		{
@@ -29,13 +30,35 @@ namespace Calendar.Domain
 			set { EncodeDaysOfWeek(value); }
 		}
 
-		public DateTime? CalculateExpirationDate()
+		public DateTime? CalculateExpirationDate(DateTime startDate)
 		{
 			if (Expiration.Never)
 				return null;
-			if (Expiration.AfterFixedNumberOfTimes > 0)
-				return DateTime.Now.Date.Add(new TimeSpan(Expiration.AfterFixedNumberOfTimes, 0, 0, 0));
-			return Expiration.OnDate;
+			return Expiration.AfterFixedNumberOfTimes > 0
+				? CalculateDateFromNumberOfTimes(startDate, Expiration.AfterFixedNumberOfTimes)
+				: Expiration.OnDate;
+		}
+
+		private DateTime CalculateDateFromNumberOfTimes(DateTime startDate, int numberOfTimes)
+		{
+			//TODO: include other options (daily, monthly, yearly)
+			var result = 0;
+			switch (PeriodUnit)
+			{
+				case TimeUnit.Day:
+					break;
+				case TimeUnit.Week:
+					var timesOnWeek = OnCertainDaysOfWeek.Count();
+					result = (int)Math.Floor((double) numberOfTimes/timesOnWeek)*7*Period + numberOfTimes%timesOnWeek;
+					break;
+				case TimeUnit.Month:
+					break;
+				case TimeUnit.Year:
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+			return startDate.Date.Add(new TimeSpan(result, 0, 0, 0));
 		}
 
 		public void ContinueToDate(DateTime date)

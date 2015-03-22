@@ -30,13 +30,63 @@ namespace Calendar.UnitTests
 		public void Repetition_Default_DayOfWeek_Is_Set()
 		{
 			//Arrange
-			var calendarDayOfWeek = DateTime.Now.DayOfWeek;//Repetition.SystemDayOfWeekToCalendarDayOfWeek(DateTime.Now.DayOfWeek);
+			var dayOfWeek = DateTime.Now.DayOfWeek;
 			//Act
 			var repetition = new Repetition(TimeUnit.Day, 1);
 			//Assert
 			Assert.AreEqual(1, repetition.OnCertainDaysOfWeek.Count(), "more than one default day of week");
-			Assert.IsTrue(repetition.OnCertainDaysOfWeek.Any(x => x == calendarDayOfWeek), "default day of week differs from current day of week");
+			Assert.IsTrue(repetition.OnCertainDaysOfWeek.Any(x => x == dayOfWeek), "default day of week differs from current day of week");
 		}
 
+		[TestMethod]
+		public void Repetition_CalculateExpirationDate_ForInfinityRepetition()
+		{
+			//Arrange
+			var repetition = new Repetition(TimeUnit.Week, SpanInWeeks, new List<DayOfWeek> { DayOfWeek.Sunday, DayOfWeek.Monday });
+			//Act
+			var date = repetition.CalculateExpirationDate(StartDate);
+			//Assert
+			Assert.IsNull(date);
+		}
+
+		[TestMethod]
+		public void Repetition_CalculateExpirationDate_ForRepetitionExpiredOnFixedDate()
+		{
+			//Arrange
+			var expectedDate = DateTime.Now.Date.Add(new TimeSpan(3, 0, 0, 0));
+			var repetition = new Repetition(TimeUnit.Week, SpanInWeeks, new List<DayOfWeek> { DayOfWeek.Sunday, DayOfWeek.Monday });
+			repetition.ContinueToDate(expectedDate);
+			//Act
+			var date = repetition.CalculateExpirationDate(StartDate);
+			//Assert
+			Assert.IsNotNull(date);
+			Assert.AreEqual(expectedDate, date.Value);
+		}
+
+		[TestMethod]
+		public void Repetition_CalculateExpirationDate_ForFixedNumberOfTimesRepetition()
+		{
+			//Arrange
+			const int howManyTimes = 11;
+			var repetition = new Repetition(TimeUnit.Week, SpanInWeeks, new List<DayOfWeek> { DayOfWeek.Sunday, DayOfWeek.Monday });
+			repetition.ContinueFixedNumberOfTimes(howManyTimes);
+			//Act
+			var date = repetition.CalculateExpirationDate(StartDate);
+			//Assert
+			Assert.IsNotNull(date);
+			Assert.AreEqual(ExpirationDate, date.Value);
+		}
+
+		const int SpanInWeeks = 4;
+
+		private static DateTime StartDate
+		{
+			get { return new DateTime(2015, 03, 22); }
+		}
+
+		private static DateTime ExpirationDate
+		{
+			get { return new DateTime(2015, 08, 10); }
+		}
 	}
 }
