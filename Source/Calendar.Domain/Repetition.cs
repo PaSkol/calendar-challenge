@@ -5,16 +5,16 @@ namespace Calendar.Domain
 {
 	public class Repetition : CalendarEntity
 	{
-		public Repetition(TimeUnit periodUnit, int period, IEnumerable<CalendarDayOfWeek> daysOfWeek = null)
+		public Repetition(TimeUnit periodUnit, int period, IEnumerable<DayOfWeek> daysOfWeek = null)
 			: this(daysOfWeek)
 		{
 			PeriodUnit = periodUnit;
 			Period = period;
 		}
 
-		private Repetition(IEnumerable<CalendarDayOfWeek> daysOfWeek)
+		private Repetition(IEnumerable<DayOfWeek> daysOfWeek)
 		{
-			EncodedDaysOfWeek = EncodeDaysOfWeek(daysOfWeek ?? new List<CalendarDayOfWeek>() { SystemDayOfWeekToCalendarDayOfWeek(DateTime.Now.DayOfWeek) });
+			EncodedDaysOfWeek = EncodeDaysOfWeek(daysOfWeek ?? new List<DayOfWeek>() { DateTime.Now.DayOfWeek });
 		}
 
 		public int Period { get; set; }
@@ -24,33 +24,27 @@ namespace Calendar.Domain
 		public int ContinueFixedNumberOfTimes { get; set; }
 		public bool ContinueIndefinitely { get; set; }
 
-		public IEnumerable<CalendarDayOfWeek> OnCertainDaysOfWeek
+		public IEnumerable<DayOfWeek> OnCertainDaysOfWeek
 		{
 			get { return DecodeDaysOfWeek(EncodedDaysOfWeek); }
 			set { EncodeDaysOfWeek(value); }
 		}
 
-		private static byte EncodeDaysOfWeek(IEnumerable<CalendarDayOfWeek> daysOfWeek)
+		private static byte EncodeDaysOfWeek(IEnumerable<DayOfWeek> daysOfWeek)
 		{
 			var result = 0;
 			foreach (var dayOfWeek in daysOfWeek)
-				result |= (byte)dayOfWeek;
+				result |= 1 << (byte)dayOfWeek;
 			return (byte)result;
 		}
 
-		private static IEnumerable<CalendarDayOfWeek> DecodeDaysOfWeek(byte encodedDaysOfWeek)
+		private static IEnumerable<DayOfWeek> DecodeDaysOfWeek(byte encodedDaysOfWeek)
 		{
-			var result = new List<CalendarDayOfWeek>();
-			foreach (var dayOfWeek in Enum.GetValues(typeof(CalendarDayOfWeek)))
-				if (((byte)dayOfWeek & encodedDaysOfWeek) > 0)
-					result.Add((CalendarDayOfWeek)dayOfWeek);
+			var result = new List<DayOfWeek>();
+			for (var i = (int)DayOfWeek.Sunday; i <= (int)DayOfWeek.Saturday; i++)
+				if ((encodedDaysOfWeek & (1 << i)) > 0)
+					result.Add((DayOfWeek) i);
 			return result;
-		}
-
-		public static CalendarDayOfWeek SystemDayOfWeekToCalendarDayOfWeek(DayOfWeek dayOfWeek)
-		{
-			var calendarDaysOfWeek = Enum.GetValues(typeof (CalendarDayOfWeek));
-			return (CalendarDayOfWeek)calendarDaysOfWeek.GetValue((int)dayOfWeek);
 		}
 	}
 }
