@@ -8,7 +8,12 @@ namespace Calendar.Domain
 {
 	public class User : CalendarEntity
 	{
-		public string Name { get; set; }
+		public User(string name)
+		{
+			Name = name;
+		}
+
+		public string Name { get; protected set; }
 		public string Email { get; set; }
 	}
 }

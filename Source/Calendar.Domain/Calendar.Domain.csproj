@@ -42,7 +42,9 @@
     <Compile Include="Alert.cs" />
     <Compile Include="CalendarEntity.cs" />
     <Compile Include="Common.cs" />
+    <Compile Include="RepetitionExpiration.cs" />
     <Compile Include="Event.cs" />
+    <Compile Include="Interval.cs" />
     <Compile Include="Repetition.cs" />
     <Compile Include="User.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

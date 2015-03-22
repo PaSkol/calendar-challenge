@@ -8,6 +8,7 @@ namespace Calendar.Domain
 		public Repetition(TimeUnit periodUnit, int period, IEnumerable<DayOfWeek> daysOfWeek = null)
 			: this(daysOfWeek)
 		{
+			Expiration = new RepetitionExpiration();
 			PeriodUnit = periodUnit;
 			Period = period;
 		}
@@ -20,9 +21,7 @@ namespace Calendar.Domain
 		public int Period { get; set; }
 		public TimeUnit PeriodUnit { get; set; }
 		protected byte EncodedDaysOfWeek { get; set; }
-		public DateTime? ContinueToDate { get; set; }
-		public int ContinueFixedNumberOfTimes { get; set; }
-		public bool ContinueIndefinitely { get; set; }
+		public RepetitionExpiration Expiration { get; set; }
 
 		public IEnumerable<DayOfWeek> OnCertainDaysOfWeek
 		{
@@ -30,6 +29,30 @@ namespace Calendar.Domain
 			set { EncodeDaysOfWeek(value); }
 		}
 
+		public DateTime? CalculateExpirationDate()
+		{
+			if (Expiration.Never)
+				return null;
+			if (Expiration.AfterFixedNumberOfTimes > 0)
+				return DateTime.Now.Date.Add(new TimeSpan(Expiration.AfterFixedNumberOfTimes, 0, 0, 0));
+			return Expiration.OnDate;
+		}
+
+		public void ContinueToDate(DateTime date)
+		{
+			Expiration.ContinueToDate(date);
+		}
+
+		public void ContinueFixedNumberOfTimes(int fixedNumberOfTimes)
+		{
+			Expiration.ContinueFixedNumberOfTimes(fixedNumberOfTimes);
+		}
+
+		public void ContinueIndefinitely()
+		{
+			Expiration.ContinueIndefinitely();
+		}
+		
 		private static byte EncodeDaysOfWeek(IEnumerable<DayOfWeek> daysOfWeek)
 		{
 			var result = 0;
