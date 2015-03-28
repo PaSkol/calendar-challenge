@@ -10,39 +10,39 @@ namespace Calendar.UnitTests
 	public class RepetitionTests
 	{
 		[TestMethod]
-		public void Repetition_DaysOfWeek_Are_Stored_Correctly()
+		public void Repetition_ForWeekPeriod_DaysOfWeek_Are_Stored_Correctly()
 		{
 			//Arrange
 			var daysOfWeek = new List<DayOfWeek> {DayOfWeek.Sunday, DayOfWeek.Monday};
 			//Act
-			var repetition = new Repetition(TimeUnit.Day, 1, daysOfWeek);
+			var repetition = new Repetition(1, daysOfWeek);
 			//Assert
-			Assert.IsTrue(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Sunday), "excpected Sunday");
-			Assert.IsTrue(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Monday), "excpected Monday");
-			Assert.IsFalse(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Tuesday), "unexcpected Tuesday");
-			Assert.IsFalse(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Wednesday), "unexcpected Wednesday");
-			Assert.IsFalse(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Thursday), "unexcpected Thursday");
-			Assert.IsFalse(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Friday), "unexcpected Friday");
-			Assert.IsFalse(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Saturday), "unexcpected Saturday");
+			Assert.IsTrue(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Sunday), "expected Sunday");
+			Assert.IsTrue(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Monday), "expected Monday");
+			Assert.IsFalse(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Tuesday), "unexpected Tuesday");
+			Assert.IsFalse(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Wednesday), "unexpected Wednesday");
+			Assert.IsFalse(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Thursday), "unexpected Thursday");
+			Assert.IsFalse(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Friday), "unexpected Friday");
+			Assert.IsFalse(repetition.OnCertainDaysOfWeek.Any(x => x == DayOfWeek.Saturday), "unexpected Saturday");
 		}
 
 		[TestMethod]
-		public void Repetition_Default_DayOfWeek_Is_Set()
+		public void Repetition_ForWeekPeriod_Default_DayOfWeek_Is_Set()
 		{
 			//Arrange
 			var dayOfWeek = DateTime.Now.DayOfWeek;
 			//Act
-			var repetition = new Repetition(TimeUnit.Day, 1);
+			var repetition = new Repetition(1, null);
 			//Assert
 			Assert.AreEqual(1, repetition.OnCertainDaysOfWeek.Count(), "more than one default day of week");
 			Assert.IsTrue(repetition.OnCertainDaysOfWeek.Any(x => x == dayOfWeek), "default day of week differs from current day of week");
 		}
 
 		[TestMethod]
-		public void Repetition_CalculateExpirationDate_ForInfinityRepetition()
+		public void Repetition_ForWeekPeriod_CalculateExpirationDate_ForInfinityRepetition()
 		{
 			//Arrange
-			var repetition = new Repetition(TimeUnit.Week, SpanInWeeks, new List<DayOfWeek> { DayOfWeek.Sunday, DayOfWeek.Monday });
+			var repetition = new Repetition(RepetitionInWeeks, new List<DayOfWeek> { DayOfWeek.Sunday, DayOfWeek.Monday });
 			//Act
 			var date = repetition.CalculateExpirationDate(StartDate);
 			//Assert
@@ -50,11 +50,11 @@ namespace Calendar.UnitTests
 		}
 
 		[TestMethod]
-		public void Repetition_CalculateExpirationDate_ForRepetitionExpiredOnFixedDate()
+		public void Repetition_ForWeekPeriod_CalculateExpirationDate_ForRepetitionExpiredOnFixedDate()
 		{
 			//Arrange
 			var expectedDate = DateTime.Now.Date.Add(new TimeSpan(3, 0, 0, 0));
-			var repetition = new Repetition(TimeUnit.Week, SpanInWeeks, new List<DayOfWeek> { DayOfWeek.Sunday, DayOfWeek.Monday });
+			var repetition = new Repetition(RepetitionInWeeks, new List<DayOfWeek> { DayOfWeek.Sunday, DayOfWeek.Monday });
 			repetition.ContinueToDate(expectedDate);
 			//Act
 			var date = repetition.CalculateExpirationDate(StartDate);
@@ -64,29 +64,87 @@ namespace Calendar.UnitTests
 		}
 
 		[TestMethod]
-		public void Repetition_CalculateExpirationDate_ForFixedNumberOfTimesRepetition()
+		public void Repetition_ForWeekPeriod_CalculateExpirationDate_ForFixedNumberOfTimesRepetition()
 		{
 			//Arrange
 			const int howManyTimes = 11;
-			var repetition = new Repetition(TimeUnit.Week, SpanInWeeks, new List<DayOfWeek> { DayOfWeek.Sunday, DayOfWeek.Monday });
+			var repetition = new Repetition(RepetitionInWeeks, new List<DayOfWeek> { DayOfWeek.Sunday, DayOfWeek.Monday });
 			repetition.ContinueFixedNumberOfTimes(howManyTimes);
 			//Act
 			var date = repetition.CalculateExpirationDate(StartDate);
 			//Assert
 			Assert.IsNotNull(date);
-			Assert.AreEqual(ExpirationDate, date.Value);
+			Assert.AreEqual(new DateTime(2015, 08, 10), date.Value);
 		}
 
-		const int SpanInWeeks = 4;
+		[TestMethod]
+		public void Repetition_ForYearPeriod_CalculateExpirationDate_ForFixedNumberOfTimesRepetition()
+		{
+			//Arrange
+			const int howManyTimes = 3;
+			const int repetitionInYears = 2;
+			var startDate = StartDate;
+			var repetition = new Repetition(repetitionInYears, startDate);
+			repetition.ContinueFixedNumberOfTimes(howManyTimes);
+			//Act
+			var date = repetition.CalculateExpirationDate(startDate);
+			//Assert
+			Assert.IsNotNull(date);
+			Assert.AreEqual(startDate.AddYears(howManyTimes * repetitionInYears), date.Value);
+		}
+
+		[TestMethod]
+		public void Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek()
+		{
+			//Arrange
+			const int repetitionInMonths = 1;
+			var startDate = new DateTime(2015, 03, 01);
+			
+			//Act
+			var firstSunday = new Repetition(repetitionInMonths, startDate.AddDays(7 * 0), true);
+			var secondSunday = new Repetition(repetitionInMonths, startDate.AddDays(7 * 1), true);
+			var thirdSunday = new Repetition(repetitionInMonths, startDate.AddDays(7 * 2), true);
+			var fourthSunday = new Repetition(repetitionInMonths, startDate.AddDays(7 * 3), true);
+			var lastSunday = new Repetition(repetitionInMonths, startDate.AddDays(7 * 4), true);
+
+			var firstSaturday = new Repetition(repetitionInMonths, startDate.AddDays(7 * 0 + 6), true);
+			var secondSaturday = new Repetition(repetitionInMonths, startDate.AddDays(7 * 1 + 6), true);
+			var thirdSaturday = new Repetition(repetitionInMonths, startDate.AddDays(7 * 2 + 6), true);
+			var fourthSaturday = new Repetition(repetitionInMonths, startDate.AddDays(7 * 3 + 6), true);
+			var lastSaturday = new Repetition(repetitionInMonths, startDate.AddDays(7 * 4 + 6), true);
+
+			//Assert
+			Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(firstSunday, DayOfWeek.Sunday, ExactDayOfWeekInMonth.First);
+			Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(secondSunday, DayOfWeek.Sunday, ExactDayOfWeekInMonth.Second);
+			Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(thirdSunday, DayOfWeek.Sunday, ExactDayOfWeekInMonth.Third);
+			Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(fourthSunday, DayOfWeek.Sunday, ExactDayOfWeekInMonth.Fourth);
+			Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(lastSunday, DayOfWeek.Sunday, ExactDayOfWeekInMonth.Last);
+
+			Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(firstSaturday, DayOfWeek.Saturday, ExactDayOfWeekInMonth.First);
+			Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(secondSaturday, DayOfWeek.Saturday, ExactDayOfWeekInMonth.Second);
+			Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(thirdSaturday, DayOfWeek.Saturday, ExactDayOfWeekInMonth.Third);
+			Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(fourthSaturday, DayOfWeek.Saturday, ExactDayOfWeekInMonth.Last);
+			Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(lastSaturday, DayOfWeek.Saturday, ExactDayOfWeekInMonth.First);
+		}
+
+		private static void Repetition_ForMonthPeriod_Correct_TransformToDayOfWeek_Assert(Repetition repetition, DayOfWeek dayOfWeek, ExactDayOfWeekInMonth exactDayOfWeekInMonth)
+		{
+			var dow = dayOfWeek;
+			Assert.AreEqual(exactDayOfWeekInMonth, repetition.ExactDayOfWeekInMonth, "expected " + exactDayOfWeekInMonth.ToString().ToLower() + " " + dow + " of month");
+			Assert.IsTrue(repetition.OnCertainDaysOfWeek.Any(x => x == dow), "expected " + dow);
+		}
+
+		//[TestMethod]
+		//public void Repetition_ForMonthPeriod_CalculateExpirationDate_ForFixedNumberOfTimesRepetition()
+		//{
+		//}
+
+		const int RepetitionInWeeks = 4;
 
 		private static DateTime StartDate
 		{
 			get { return new DateTime(2015, 03, 22); }
 		}
 
-		private static DateTime ExpirationDate
-		{
-			get { return new DateTime(2015, 08, 10); }
-		}
 	}
 }

@@ -45,4 +45,26 @@ namespace Calendar.Domain
 		ToFuture = 0x02, // |##>
 		Between = 0x03, // <##>
 	}
+
+	public enum ExactDayOfWeekInMonth : sbyte
+	{
+		None = 0,
+		First = 1,
+		Second = 2,
+		Third = 3,
+		Fourth = 4,
+		Last = -1
+	}
+
+	public class DayAndMonth
+	{
+		public DayAndMonth(int day, int month = 0)
+		{
+			Day = (byte) day;
+			Month = (byte) month;
+		}
+
+		public byte Day { get; set; }
+		public byte Month { get; set; }
+	}
 }
