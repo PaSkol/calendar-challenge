@@ -8,14 +8,25 @@ namespace Calendar.Domain
 {
 	public class Repetition : CalendarEntity
 	{
+		protected Repetition(TimeUnit periodUnit, DateTime firstOccurrence, int period, IEnumerable<DayOfWeek> daysOfWeek)
+		{
+			FirstDayOfWeek = CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek;
+			FirstOccurrence = firstOccurrence;
+			PeriodUnit = periodUnit;
+			Period = period;
+			Expiration = new RepetitionExpiration();
+			EncodedDaysOfWeek = (daysOfWeek == null ? (byte)0 : EncodeDaysOfWeek(daysOfWeek));
+		}
+
 		/// <summary>
 		/// Constructor for month repetition
 		/// </summary>
+		/// <param name="firstOccurrence">first occurence of repetition (and first occurence of event)</param>
 		/// <param name="period">repeat after than number of months</param>
 		/// <param name="when">uses day of date when event has to be repated or uses as base for calculation of exact day of exact week in month (depends on <see cref="transformToDayOfWeek"/>)</param>
 		/// <param name="transformToDayOfWeek">calculate <see cref="when"/> parameter to exact day of exact week in month</param>
-		public Repetition(int period, DateTime when, bool transformToDayOfWeek)
-			: this(TimeUnit.Month, period, transformToDayOfWeek ? new List<DayOfWeek>() { when.DayOfWeek } : null)
+		public Repetition(DateTime firstOccurrence, int period, DateTime when, bool transformToDayOfWeek)
+			: this(TimeUnit.Month, firstOccurrence, period, transformToDayOfWeek ? new List<DayOfWeek>() { when.DayOfWeek } : null)
 		{
 			if (transformToDayOfWeek)
 			{
@@ -36,10 +47,11 @@ namespace Calendar.Domain
 		/// <summary>
 		/// Constructor for year repetition
 		/// </summary>
+		/// <param name="firstOccurrence">first occurence of repetition (and first occurence of event)</param>
 		/// <param name="period">repeat after than number of years</param>
 		/// <param name="when">uses day and month of date when event has to be repated</param>
-		public Repetition(int period, DateTime when)
-			: this(TimeUnit.Year, period, null)
+		public Repetition(DateTime firstOccurrence, int period, DateTime when)
+			: this(TimeUnit.Year, firstOccurrence, period, null)
 		{
 			ExactDayAndOptionalMonth = new DayAndMonth(when.Day, when.Month);
 		}
@@ -47,22 +59,17 @@ namespace Calendar.Domain
 		/// <summary>
 		/// Constructor for week repetition
 		/// </summary>
+		/// <param name="firstOccurrence">first occurence of repetition (and first occurence of event)</param>
 		/// <param name="period">repeat after than number of weeks</param>
 		/// <param name="daysOfWeek">days of week, when event has to occure</param>
-		public Repetition(int period, IEnumerable<DayOfWeek> daysOfWeek)
-			: this(TimeUnit.Week, period, daysOfWeek ?? new List<DayOfWeek>() { DateTime.Now.DayOfWeek })
+		public Repetition(DateTime firstOccurrence, int period, IEnumerable<DayOfWeek> daysOfWeek)
+			: this(TimeUnit.Week, firstOccurrence, period, daysOfWeek ?? new List<DayOfWeek>() { DateTime.Now.DayOfWeek })
 		{
 			ExactDayOfWeekInMonth = ExactDayOfWeekInMonth.None;
 		}
 
-		protected Repetition(TimeUnit periodUnit, int period, IEnumerable<DayOfWeek> daysOfWeek)
-		{
-			PeriodUnit = periodUnit;
-			Period = period;
-			Expiration = new RepetitionExpiration();
-			EncodedDaysOfWeek = (daysOfWeek == null ? (byte)0 : EncodeDaysOfWeek(daysOfWeek));
-		}
-
+		public DayOfWeek FirstDayOfWeek { get; set; }
+		public DateTime FirstOccurrence { get; private set; }
 		public int Period { get; set; }
 		public TimeUnit PeriodUnit { get; set; }
 		/// <summary>
@@ -76,7 +83,7 @@ namespace Calendar.Domain
 		/// <summary>
 		/// Required for <see cref="PeriodUnit"/> equal <see cref="TimeUnit.Month"/> (uses day only) or <see cref="TimeUnit.Year"/> (uses day and month)
 		/// </summary>
-		public DayAndMonth ExactDayAndOptionalMonth { get; set; }
+		protected DayAndMonth ExactDayAndOptionalMonth { get; set; }
 		public RepetitionExpiration Expiration { get; private set; }
 
 		public IEnumerable<DayOfWeek> OnCertainDaysOfWeek
@@ -85,13 +92,20 @@ namespace Calendar.Domain
 			set { EncodeDaysOfWeek(value); }
 		}
 
-		public DateTime? CalculateExpirationDate(DateTime startDate)
+		public DateTime? CalculateExpirationDate()
 		{
 			if (Expiration.Never)
 				return null;
 			return Expiration.AfterFixedNumberOfTimes > 0
-				? CalculateStopDateFromNumberOfTimes(startDate, Expiration.AfterFixedNumberOfTimes)
+				? CalculateStopDateFromNumberOfTimes(FirstOccurrence, Expiration.AfterFixedNumberOfTimes)
 				: Expiration.OnDate;
+		}
+
+		private int CalculateMaxDayNumberFromDaysOfWeekInWeekRange()
+		{
+			// 1 2 3 4 5 6 7
+			//     3
+			return 0;
 		}
 
 		//TODO: practically stop date can be calculate once - in constructor, we only need pass start date there and here only return stored result of calculation
@@ -102,13 +116,15 @@ namespace Calendar.Domain
 			switch (PeriodUnit)
 			{
 				case TimeUnit.Day:
+					date = date.AddDays(Period*numberOfTimes);
 					break;
 				case TimeUnit.Week:
 					var timesOnWeek = OnCertainDaysOfWeek.Count();
-					var daysFromWeeks = (int)Math.Floor((double) numberOfTimes/timesOnWeek)*7*Period + numberOfTimes%timesOnWeek;
+					var weeks = (int)Math.Floor((double)numberOfTimes / timesOnWeek) * Period;
+					var days = weeks*7 + numberOfTimes%timesOnWeek;
 					//TODO: don't forget that last day of event is exact day of week - that the stop date is
 					//TODO: also don't forget, that sunday can be begin of week, so it can bee before of rest days of week, and one of these will be last day of event
-					return startDate.Date.Add(new TimeSpan(daysFromWeeks, 0, 0, 0));
+					return startDate.Date.AddDays(days);
 				case TimeUnit.Month:
 					date = date.AddMonths(Period * numberOfTimes);
 					if (ExactDayOfWeekInMonth == ExactDayOfWeekInMonth.None)

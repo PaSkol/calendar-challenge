@@ -22,6 +22,8 @@ namespace Calendar.Domain
 		public TimeZone TimeZone { get; set; }
 		public User User { get; set; }
 		public Repetition Repetition { get; set; }
+		public bool SingleOccurrence { get { return Repetition == null; }}
+		public EventCommonData CommonData { get; set; }
 		public IList<Alert> Alerts { get; set; }
 		//TODO: implementation of common behaviors for splitted events
 	}
